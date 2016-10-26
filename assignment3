@@ -1,8 +1,13 @@
-# %matplotlib inline
-import sklearn
-import numpy as np
+import matplotlib as mpl
+mpl.use('TkAgg')
 
-from sklearn import neighbors
+import matplotlib.pyplot as plt
+
+import pandas as pd
+import numpy as np
+from sklearn.cross_validation import train_test_split
+
+from sklearn import neighbors, linear_model
 
 col_names = ['instant','dteday','season','yr','month','hr', 'holidy', 'weekday', 'workingday', 'weathersit','temp', \
             'feels_like_temp','humidity','windspeed', 'casual_rider_cnt']
@@ -10,35 +15,45 @@ col_names = ['instant','dteday','season','yr','month','hr', 'holidy', 'weekday',
 
 def load_data():
 
-    return np.genfromtxt('hour.csv', dtype=None, delimiter=',')
-
+    df = pd.read_csv('hour.csv', sep=',')
+    return df.values
 
 def getKNeighborHrly():
 
     hourly_data = load_data()
 
     x_matrix = hourly_data[1:, 2:-3]
-    print x_matrix[0]
-    #
+    x_matrix = np.array(x_matrix).astype(np.float)
+
+    print x_matrix[1]
+
     # x_matrix = x_matrix[:]
     print x_matrix.shape
     #
-    y = hourly_data[1:, -3]
+    y = hourly_data[1:, -2]
 
-    x_matrix_train = x_matrix[:-20]
-    x_matrix_test = x_matrix[-20:]
+    print 'Y: ', y[0]
 
+    # x_matrix_train = x_matrix[:-20]
+    # x_matrix_test = x_matrix[-20:]
+
+    # print x_matrix_test[2]
     # Splitting training and testing data (target)
-    y_train = y[:-20]
-    y_test = y[-20:]
+    # y_train = y[:-20]
+    # y_test = y[-20:]
+    x_train, x_test, y_train, y_test = train_test_split(x_matrix, y, test_size=0.2, random_state=0)
 
-    feature_names = np.array(col_names[1:])
+    knearest_regression = neighbors.KNeighborsRegressor(n_neighbors=3, weights='uniform')
+    knearest_regression.fit(x_train, y_train)
 
-    knearest_clf = neighbors.KNeighborsClassifier(n_neighbors=5, weights='uniform')
-    knearest_clf.fit(x_matrix, y)
+    print('Residual sum of squares: ', np.mean(knearest_regression.predict(x_test) - y_test) ** 2)
+    print('Variance Score:', knearest_regression.score(x_test, y_test))
 
-    print 'predicted: ', knearest_clf.predict(x_matrix[-2:, :])
-    print 'truth: ', y[-2:]
+    linear_regr = linear_model.LinearRegression()
+    linear_regr.fit(x_train, y_train)
+
+    print('Residual sum of squares: ', np.mean(linear_regr.predict(x_test) - y_test) ** 2)
+    print('Variance Score:', linear_regr.score(x_test, y_test))
 
 
 getKNeighborHrly()
