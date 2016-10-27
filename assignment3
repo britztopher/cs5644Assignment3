@@ -1,59 +1,47 @@
-import matplotlib as mpl
-mpl.use('TkAgg')
-
-import matplotlib.pyplot as plt
-
 import pandas as pd
 import numpy as np
 from sklearn.cross_validation import train_test_split
-
 from sklearn import neighbors, linear_model
-
-col_names = ['instant','dteday','season','yr','month','hr', 'holidy', 'weekday', 'workingday', 'weathersit','temp', \
-            'feels_like_temp','humidity','windspeed', 'casual_rider_cnt']
-
 
 def load_data():
 
     df = pd.read_csv('hour.csv', sep=',')
     return df.values
 
-def getKNeighborHrly():
+
+def getKNeighborHrly(rider_type):
 
     hourly_data = load_data()
 
     x_matrix = hourly_data[1:, 2:-3]
     x_matrix = np.array(x_matrix).astype(np.float)
 
-    print x_matrix[1]
+    if rider_type == 'casual':
+        y = hourly_data[1:, -3]
+    elif rider_type == 'registered':
+        y = hourly_data[1:, -2]
+    else:
+        y = hourly_data[1:, -1]
 
-    # x_matrix = x_matrix[:]
-    print x_matrix.shape
-    #
-    y = hourly_data[1:, -3]
-
-    print 'Y: ', y[0]
-
-    # x_matrix_train = x_matrix[:-20]
-    # x_matrix_test = x_matrix[-20:]
-
-    # print x_matrix_test[2]
-    # Splitting training and testing data (target)
-    # y_train = y[:-20]
-    # y_test = y[-20:]
     x_train, x_test, y_train, y_test = train_test_split(x_matrix, y, test_size=0.2, random_state=0)
 
-    knearest_regression = neighbors.KNeighborsRegressor(n_neighbors=5, weights='uniform')
+    knearest_regression = neighbors.KNeighborsRegressor(n_neighbors=3, weights='uniform')
     knearest_regression.fit(x_train, y_train)
 
-    print('Residual sum of squares: ', np.mean(knearest_regression.predict(x_test) - y_test) ** 2)
-    print('Variance Score:', knearest_regression.score(x_test, y_test))
+    residual_sum_of_squares_variance(knearest_regression, x_test, y_test, rider_type + ' Riders: KNN Regression::');
 
     linear_regr = linear_model.LinearRegression()
     linear_regr.fit(x_train, y_train)
 
-    print('Residual sum of squares: ', np.mean(linear_regr.predict(x_test) - y_test) ** 2)
-    print('Variance Score:', linear_regr.score(x_test, y_test))
+    residual_sum_of_squares_variance(linear_regr, x_test, y_test, rider_type + ' Riders: Linear Regression::')
 
 
-getKNeighborHrly()
+def residual_sum_of_squares_variance(regression_type, x_test, y_test, type):
+    print(type + 'Residual sum of squares: ', np.mean(regression_type.predict(x_test) - y_test) ** 2)
+    print(type + 'Variance Score:', regression_type.score(x_test, y_test))
+
+
+getKNeighborHrly('Casual')
+getKNeighborHrly('Registered')
+getKNeighborHrly('Total')
+
