@@ -1,21 +1,25 @@
 import pandas as pd
 import numpy as np
+import collections
 from sklearn.cross_validation import train_test_split
 from sklearn import neighbors, linear_model
+from sklearn.cluster import KMeans
 
-def load_data():
 
-    df = pd.read_csv('hour.csv', sep=',')
+def load_data(file):
+
+    df = pd.read_csv(file, sep=',')
     return df.values
 
 
-def getKNeighborHrly(rider_type):
+def getKNeighborHrly(rider_type, data_file):
 
-    hourly_data = load_data()
+    hourly_data = load_data(data_file)
 
-    x_matrix = hourly_data[1:, 2:-3]
+    x_matrix = hourly_data[1:, 3:-3]
     x_matrix = np.array(x_matrix).astype(np.float)
 
+    # need to find the correct target class columns
     if rider_type == 'casual':
         y = hourly_data[1:, -3]
     elif rider_type == 'registered':
@@ -28,7 +32,7 @@ def getKNeighborHrly(rider_type):
     knearest_regression = neighbors.KNeighborsRegressor(n_neighbors=3, weights='uniform')
     knearest_regression.fit(x_train, y_train)
 
-    residual_sum_of_squares_variance(knearest_regression, x_test, y_test, rider_type + ' Riders: KNN Regression::');
+    residual_sum_of_squares_variance(knearest_regression, x_test, y_test, rider_type + ' Riders: KNN Regression::')
 
     linear_regr = linear_model.LinearRegression()
     linear_regr.fit(x_train, y_train)
@@ -37,11 +41,41 @@ def getKNeighborHrly(rider_type):
 
 
 def residual_sum_of_squares_variance(regression_type, x_test, y_test, type):
+
     print(type + 'Residual sum of squares: ', np.mean(regression_type.predict(x_test) - y_test) ** 2)
     print(type + 'Variance Score:', regression_type.score(x_test, y_test))
 
 
-getKNeighborHrly('Casual')
-getKNeighborHrly('Registered')
-getKNeighborHrly('Total')
 
+hour_file = 'hour.csv'
+daily_file = 'day.csv'
+print '\nHOURLY RIDERSHIP PREDICTIONS::'
+
+getKNeighborHrly('Casual', hour_file)
+getKNeighborHrly('Registered', hour_file)
+getKNeighborHrly('Total', hour_file)
+
+print '\nDAILY RIDERSHIP PREDICTIONS::'
+getKNeighborHrly('Casual', daily_file)
+getKNeighborHrly('Registered', daily_file)
+getKNeighborHrly('Total', daily_file)
+
+
+def getKMeans():
+
+    data = pd.read_csv('seeds_dataset.txt', delim_whitespace=True, header=None)
+    X = data
+
+    kmeans_cluster_algo = KMeans(n_clusters=3)
+    kmeans_cluster_algo.fit(X)
+
+    # print(kmeans_cluster_algo.labels_[::10])
+
+    print "Clusters (result of k-means)"
+    print collections.Counter(kmeans_cluster_algo.labels_)
+    print "Ground truth"
+    print collections.Counter(X[7])
+
+print '\nKMEANS WITH 3 CLUSTERS:'
+
+getKMeans()
